@@ -1,0 +1,69 @@
+add_newline = true
+command_timeout = 1000
+scan_timeout = 5000
+palette = 'nord'
+
+format = """
+[╭─](bold blue)$username$hostname$directory$git_branch$git_status$python$nodejs$php$java$docker_context$cmd_duration
+[╰─](bold blue)$character"""
+
+[palettes.nord]
+blue   = '#81A1C1'
+cyan   = '#88C0D0'
+green  = '#A3BE8C'
+yellow = '#EBCB8B'
+red    = '#BF616A'
+purple = '#B48EAD'
+
+[username]
+show_always = true
+style_user = 'bold purple'
+format = '[$user]($style) '
+
+[hostname]
+ssh_only = true
+style = 'bold purple'
+format = '[@$hostname]($style) '
+
+[directory]
+style = 'bold cyan'
+truncation_length = 3
+truncation_symbol = '…/'
+format = '[$path]($style)[$read_only]($read_only_style) '
+
+[git_branch]
+style = 'bold purple'
+format = '[$symbol$branch]($style) '
+
+[git_status]
+style = 'yellow'
+format = '([\[$all_status$ahead_behind\]]($style) )'
+
+[python]
+style = 'yellow'
+format = '[$symbol$version]($style) '
+
+[nodejs]
+style = 'green'
+format = '[$symbol$version]($style) '
+
+[php]
+style = 'purple'
+format = '[$symbol$version]($style) '
+
+[java]
+style = 'red'
+format = '[$symbol$version]($style) '
+
+[docker_context]
+style = 'blue'
+format = '[$symbol$context]($style) '
+
+[cmd_duration]
+min_time = 2000
+style = 'yellow'
+format = '[took $duration]($style) '
+
+[character]
+success_symbol = '[❯](bold green)'
+error_symbol = '[❯](bold red)'
