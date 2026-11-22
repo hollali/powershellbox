@@ -138,56 +138,45 @@ Describe 'setup.ps1' {
         $script:setupPath = Join-Path $script:repoRoot 'setup.ps1'
         $script:uninstallPath = Join-Path $script:repoRoot 'uninstall.ps1'
         $script:pwshPath = Join-Path $PSHOME $(if ($IsWindows) { 'pwsh.exe' } else { 'pwsh' })
-        $script:originalHome = $env:HOME
         $script:dryHome = Join-Path ([System.IO.Path]::GetTempPath()) "psb-dry-$([guid]::NewGuid().ToString('N'))"
         $script:installHome = Join-Path ([System.IO.Path]::GetTempPath()) "psb-install-$([guid]::NewGuid().ToString('N'))"
+        $script:dryInstallDir = Join-Path $script:dryHome '.local/share/powershellbox'
+        $script:installDir = Join-Path $script:installHome '.local/share/powershellbox'
         New-Item -ItemType Directory -Path $script:dryHome -Force | Out-Null
         New-Item -ItemType Directory -Path (Join-Path $script:installHome '.config/powershell') -Force | Out-Null
         Set-Content -Path (Join-Path $script:installHome '.config/powershell/Microsoft.PowerShell_profile.ps1') -Value 'ORIGINAL'
     }
 
     AfterAll {
-        $env:HOME = $script:originalHome
         Remove-Item $script:dryHome -Recurse -Force -ErrorAction SilentlyContinue
         Remove-Item $script:installHome -Recurse -Force -ErrorAction SilentlyContinue
     }
 
-    It '-DryRun does not write any files' {
-        try {
-            $env:HOME = $script:dryHome
-            $output = & $script:pwshPath -NoProfile -File $script:setupPath -DryRun 6>&1 | Out-String
-            $found = @(Get-ChildItem -Path $script:dryHome -Recurse -Force -ErrorAction SilentlyContinue | ForEach-Object { $_.FullName })
-            "DIAG pwshPath=$($script:pwshPath) version=$($PSVersionTable.PSVersion) home=$($env:HOME)`nOUTPUT:$output`nFOUND:$($found -join ', ')" | Write-Host
-            Test-Path (Join-Path $script:dryHome '.local') | Should -BeFalse
-            Test-Path (Join-Path $script:dryHome '.config') | Should -BeFalse
-        } finally {
-            $env:HOME = $script:originalHome
-        }
+    It '-DryRun does not create any PowerShellBox files' {
+        & $script:pwshPath -NoProfile -File $script:setupPath -DryRun -HomeDir $script:dryHome -InstallDir $script:dryInstallDir | Out-Null
+
+        Test-Path $script:dryInstallDir | Should -BeFalse
+        Test-Path (Join-Path $script:dryHome '.config/powershell/Microsoft.PowerShell_profile.ps1') | Should -BeFalse
+        Test-Path (Join-Path $script:dryHome '.config/starship.toml') | Should -BeFalse
+        Test-Path (Join-Path $script:dryHome '.config/fastfetch/config.jsonc') | Should -BeFalse
+        Test-Path (Join-Path $script:dryHome '.local/share/fonts') | Should -BeFalse
     }
 
     It '-NoInstall copies configs, links the profile and writes metadata' {
-        try {
-            $env:HOME = $script:installHome
-            & $script:pwshPath -NoProfile -File $script:setupPath -NoInstall | Out-Null
-            Test-Path (Join-Path $script:installHome '.local/share/powershellbox/Microsoft.PowerShell_profile.ps1') -PathType Leaf | Should -BeTrue
-            Test-Path (Join-Path $script:installHome '.local/share/powershellbox/completions.ps1') -PathType Leaf | Should -BeTrue
-            Test-Path (Join-Path $script:installHome '.local/share/powershellbox/install.json') -PathType Leaf | Should -BeTrue
-            Test-Path (Join-Path $script:installHome '.config/powershell/Microsoft.PowerShell_profile.ps1') | Should -BeTrue
-            Test-Path (Join-Path $script:installHome '.config/powershell/Microsoft.PowerShell_profile.ps1.powershellbox-backup') -PathType Leaf | Should -BeTrue
-        } finally {
-            $env:HOME = $script:originalHome
-        }
+        & $script:pwshPath -NoProfile -File $script:setupPath -NoInstall -HomeDir $script:installHome -InstallDir $script:installDir | Out-Null
+
+        Test-Path (Join-Path $script:installDir 'Microsoft.PowerShell_profile.ps1') -PathType Leaf | Should -BeTrue
+        Test-Path (Join-Path $script:installDir 'completions.ps1') -PathType Leaf | Should -BeTrue
+        Test-Path (Join-Path $script:installDir 'install.json') -PathType Leaf | Should -BeTrue
+        Test-Path (Join-Path $script:installHome '.config/powershell/Microsoft.PowerShell_profile.ps1') | Should -BeTrue
+        Test-Path (Join-Path $script:installHome '.config/powershell/Microsoft.PowerShell_profile.ps1.powershellbox-backup') -PathType Leaf | Should -BeTrue
     }
 
     It 'uninstall restores the original profile' {
-        try {
-            $env:HOME = $script:installHome
-            & $script:pwshPath -NoProfile -File $script:uninstallPath | Out-Null
-            (Get-Content (Join-Path $script:installHome '.config/powershell/Microsoft.PowerShell_profile.ps1') -Raw).Trim() |
-                Should -Be 'ORIGINAL'
-            Test-Path (Join-Path $script:installHome '.local/share/powershellbox') | Should -BeFalse
-        } finally {
-            $env:HOME = $script:originalHome
-        }
+        & $script:pwshPath -NoProfile -File $script:uninstallPath -HomeDir $script:installHome -InstallDir $script:installDir | Out-Null
+
+        (Get-Content (Join-Path $script:installHome '.config/powershell/Microsoft.PowerShell_profile.ps1') -Raw).Trim() |
+            Should -Be 'ORIGINAL'
+        Test-Path $script:installDir | Should -BeFalse
     }
 }

@@ -43,8 +43,10 @@ pwsh -File ./setup.ps1 -DryRun      # show every action without changing anythin
 pwsh -File ./setup.ps1 -NoInstall   # refresh configs only, skip packages and fonts
 pwsh -File ./setup.ps1 -Force       # re-download fonts even if already present
 pwsh -File ./setup.ps1 -InstallDir /custom/path
+pwsh -File ./setup.ps1 -HomeDir /custom/home
 ```
 
+`-HomeDir` redirects all config and font paths, which is useful for isolated installs and tests.
 `-NoInstall` is what `tbupdate` uses after pulling changes. On Windows, symlinks may
 require Developer Mode or an elevated shell; setup falls back to copying the configs
 and uninstall still cleans those up.
@@ -98,7 +100,7 @@ pwsh -ExecutionPolicy Bypass -File ./uninstall.ps1
 
 Restores any backups it made and removes the installed copies and fonts. Packages
 (starship, fastfetch, fzf, ...) are left in place. `uninstall.ps1` also supports
-`-DryRun` and `-InstallDir`.
+`-DryRun`, `-InstallDir` and `-HomeDir`.
 
 ## Tests
 

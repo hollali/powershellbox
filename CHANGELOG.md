@@ -2,6 +2,13 @@
 
 All notable changes to PowerShellBox are documented here.
 
+## 1.1.1
+
+- Fixed: the Pester dry-run test now checks PowerShellBox artifacts instead of any `.local` directory; PowerShell itself creates its own cache/modules directories under a fresh HOME.
+- Fixed: CI tests use `-HomeDir` to isolate config paths on every platform.
+- Fixed: alias overrides no longer fail on Windows where built-in aliases carry the `AllScope` option.
+- Added: `-HomeDir` on `setup.ps1` and `uninstall.ps1` for isolated installs and tests.
+
 ## 1.1.0
 
 - Fixed: `eza` is now installed by `setup.ps1` so `ls`/`ll`/`la`/`tree` use it when available.

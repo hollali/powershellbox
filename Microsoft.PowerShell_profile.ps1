@@ -10,7 +10,7 @@
 if (-not [Environment]::UserInteractive -and -not $env:POWERSHELLBOX_ALLOW_NONINTERACTIVE) { return }
 
 # ---------- Version & configuration ----------
-$script:PowerShellBoxVersion = '1.1.0'
+$script:PowerShellBoxVersion = '1.1.1'
 $script:PowerShellBoxHome = Join-Path $HOME ".local/share/powershellbox"
 $script:PowerShellBoxConfigPath = Join-Path $HOME ".config/powershellbox/config.ps1"
 $script:PowerShellBoxConfig = @{}
@@ -62,18 +62,30 @@ if (($env:PATH -split [regex]::Escape($pathSeparator)) -notcontains $localBin) {
 if (Get-Command nvim -ErrorAction SilentlyContinue) { $env:EDITOR = "nvim"; $env:VISUAL = "nvim" }
 
 # ---------- Aliases (simple command mappings only) ----------
+function Set-PsbAlias([string]$name, $target) {
+    try {
+        if (Test-Path "Alias:\$name") {
+            Set-Item -Path "Alias:\$name" -Value $target -Force -ErrorAction Stop
+        } else {
+            Set-Alias -Name $name -Value $target -ErrorAction Stop
+        }
+    } catch {
+        Write-Verbose "PowerShellBox could not set alias '$name': $_"
+    }
+}
+
 if (PsbEnabled 'aliases') {
     if (Get-Command eza -ErrorAction SilentlyContinue) {
-        Set-Alias ls eza -Force
+        Set-PsbAlias ls eza
     } else {
-        Set-Alias ls Get-ChildItem -Force
+        Set-PsbAlias ls Get-ChildItem
     }
-    Set-Alias grep Select-String -Force
-    Set-Alias cp Copy-Item -Force
-    Set-Alias mv Move-Item -Force
-    Set-Alias c Clear-Host -Force
-    if (Get-Command trash-put -ErrorAction SilentlyContinue) { Set-Alias rm trash-put -Force }
-    if (Get-Command nvim -ErrorAction SilentlyContinue) { Set-Alias vim nvim -Force }
+    Set-PsbAlias grep Select-String
+    Set-PsbAlias cp Copy-Item
+    Set-PsbAlias mv Move-Item
+    Set-PsbAlias c Clear-Host
+    if (Get-Command trash-put -ErrorAction SilentlyContinue) { Set-PsbAlias rm trash-put }
+    if (Get-Command nvim -ErrorAction SilentlyContinue) { Set-PsbAlias vim nvim }
 }
 
 # ---------- Filesystem helpers ----------

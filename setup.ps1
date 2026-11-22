@@ -13,11 +13,13 @@ param(
     [switch]$DryRun,
     [switch]$NoInstall,
     [switch]$Force,
-    [string]$InstallDir = (Join-Path $HOME ".local/share/powershellbox")
+    [string]$InstallDir = (Join-Path $HOME ".local/share/powershellbox"),
+    [string]$HomeDir = $HOME
 )
 
 $ErrorActionPreference = 'Stop'
 $script:REPO_DIR = (Get-Item (Split-Path -Parent $PSCommandPath)).FullName
+$script:PsbHome = $HomeDir
 $script:INSTALL_DIR = $InstallDir
 $script:NERD_FONTS = @("JetBrainsMono","FiraCode","CascadiaCode","Hack")
 $script:BACKUP_SUFFIX = ".powershellbox-backup"
@@ -102,7 +104,7 @@ if (-not $NoInstall) {
 
     # --- 4. Nerd Fonts ---
     function Install-Font([string]$font) {
-        $font_dir = Join-Path $HOME ".local/share/fonts/${font}NF"
+        $font_dir = Join-Path $script:PsbHome ".local/share/fonts/${font}NF"
         if ((Test-Path $font_dir -PathType Container) -and -not $Force) { return $true }
         try {
             Invoke-Action "Installing ${font} Nerd Font" {
@@ -151,9 +153,9 @@ Invoke-Action "Copying config to $script:INSTALL_DIR" $copyAction | Out-Null
 
 # --- 6. Symlink (back up anything that already exists) ---
 $profileDest = if ($script:IsWin) {
-    Join-Path $HOME "Documents/PowerShell/Microsoft.PowerShell_profile.ps1"
+    Join-Path $script:PsbHome "Documents/PowerShell/Microsoft.PowerShell_profile.ps1"
 } else {
-    Join-Path $HOME ".config/powershell/Microsoft.PowerShell_profile.ps1"
+    Join-Path $script:PsbHome ".config/powershell/Microsoft.PowerShell_profile.ps1"
 }
 
 function Link-Config([string]$src, [string]$dest) {
@@ -191,7 +193,7 @@ function Link-Config([string]$src, [string]$dest) {
 }
 
 Invoke-Action "Linking PowerShell profile" { Link-Config (Join-Path $script:INSTALL_DIR "Microsoft.PowerShell_profile.ps1") $profileDest } | Out-Null
-Invoke-Action "Linking Starship config" { Link-Config (Join-Path $script:INSTALL_DIR "starship.toml") (Join-Path $HOME ".config/starship.toml") } | Out-Null
-Invoke-Action "Linking Fastfetch config" { Link-Config (Join-Path $script:INSTALL_DIR "fastfetch/config.jsonc") (Join-Path $HOME ".config/fastfetch/config.jsonc") } | Out-Null
+Invoke-Action "Linking Starship config" { Link-Config (Join-Path $script:INSTALL_DIR "starship.toml") (Join-Path $script:PsbHome ".config/starship.toml") } | Out-Null
+Invoke-Action "Linking Fastfetch config" { Link-Config (Join-Path $script:INSTALL_DIR "fastfetch/config.jsonc") (Join-Path $script:PsbHome ".config/fastfetch/config.jsonc") } | Out-Null
 
 Info "Done! Set your terminal font to one of the installed 'Nerd Font' variants (e.g. 'JetBrainsMono Nerd Font'), then open a new PowerShell."

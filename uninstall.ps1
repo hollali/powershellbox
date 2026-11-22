@@ -7,10 +7,12 @@
 [CmdletBinding()]
 param(
     [switch]$DryRun,
-    [string]$InstallDir = (Join-Path $HOME ".local/share/powershellbox")
+    [string]$InstallDir = (Join-Path $HOME ".local/share/powershellbox"),
+    [string]$HomeDir = $HOME
 )
 
 $ErrorActionPreference = 'Stop'
+$script:PsbHome = $HomeDir
 $script:INSTALL_DIR = $InstallDir
 $script:NERD_FONTS = @("JetBrainsMono","FiraCode","CascadiaCode","Hack")
 $script:BACKUP_SUFFIX = ".powershellbox-backup"
@@ -44,14 +46,14 @@ if (Test-Path $fallbackMarker -PathType Leaf) {
 }
 
 $profileDest = if ($script:IsWin) {
-    Join-Path $HOME "Documents/PowerShell/Microsoft.PowerShell_profile.ps1"
+    Join-Path $script:PsbHome "Documents/PowerShell/Microsoft.PowerShell_profile.ps1"
 } else {
-    Join-Path $HOME ".config/powershell/Microsoft.PowerShell_profile.ps1"
+    Join-Path $script:PsbHome ".config/powershell/Microsoft.PowerShell_profile.ps1"
 }
 
 Restore-File $profileDest
-Restore-File (Join-Path $HOME ".config/starship.toml")
-Restore-File (Join-Path $HOME ".config/fastfetch/config.jsonc")
+Restore-File (Join-Path $script:PsbHome ".config/starship.toml")
+Restore-File (Join-Path $script:PsbHome ".config/fastfetch/config.jsonc")
 
 if ($DryRun) {
     Write-Host "[dry-run] Remove $($script:INSTALL_DIR)" -ForegroundColor DarkGray
@@ -60,7 +62,7 @@ if ($DryRun) {
 }
 
 foreach ($font in $script:NERD_FONTS) {
-    $fontDir = Join-Path $HOME ".local/share/fonts/${font}NF"
+    $fontDir = Join-Path $script:PsbHome ".local/share/fonts/${font}NF"
     if (Test-Path $fontDir -PathType Container) {
         if ($DryRun) { Write-Host "[dry-run] Remove $fontDir" -ForegroundColor DarkGray }
         else { Remove-Item $fontDir -Recurse -Force -ErrorAction SilentlyContinue }
