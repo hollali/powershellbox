@@ -155,7 +155,9 @@ Describe 'setup.ps1' {
     It '-DryRun does not write any files' {
         try {
             $env:HOME = $script:dryHome
-            & $script:pwshPath -NoProfile -File $script:setupPath -DryRun | Out-Null
+            $output = & $script:pwshPath -NoProfile -File $script:setupPath -DryRun 6>&1 | Out-String
+            $found = @(Get-ChildItem -Path $script:dryHome -Recurse -Force -ErrorAction SilentlyContinue | ForEach-Object { $_.FullName })
+            "DIAG pwshPath=$($script:pwshPath) version=$($PSVersionTable.PSVersion) home=$($env:HOME)`nOUTPUT:$output`nFOUND:$($found -join ', ')" | Write-Host
             Test-Path (Join-Path $script:dryHome '.local') | Should -BeFalse
             Test-Path (Join-Path $script:dryHome '.config') | Should -BeFalse
         } finally {
